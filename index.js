@@ -1,11 +1,13 @@
 import express from 'express';
 import { neon } from '@neondatabase/serverless';
 import path from 'path';
+import cors from 'cors';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 const app = express();
 const port = 3000;
+app.use(cors());  // Esto permitirá solicitudes desde cualquier origen
 
 
 // Configura tu conexión a la base de datos de Neon
@@ -18,56 +20,58 @@ app.use(express.json());
 app.post('/consulta', async (req, res) => {
   const queryId = req.body.queryId;
 
-  // Definir las consultas SQL según el queryId
   const sqlQueries = {
-    1: `SELECT v.marca, v.modelo, SUM(ve.cantidad) AS total_vendido 
-          FROM ventas ve
-          JOIN vehiculo v ON ve.id_vehículo = v.patente
-          WHERE ve.fecha_venta > CURRENT_DATE - INTERVAL '6 months'
-          GROUP BY ve.id_vehículo
-          ORDER BY total_vendido DESC
-          LIMIT 1;`,
+    1: `SELECT v.marca, v.modelo, SUM(ve.cantidad) AS total_vendido
+    FROM ventas ve
+    JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
+    WHERE ve.fecha_venta > CURRENT_DATE - INTERVAL '6 months'
+    GROUP BY v.marca, v.modelo
+    ORDER BY total_vendido DESC
+    LIMIT 1;`,
 
     2: `SELECT id_vehículo, COUNT(*) AS reparaciones
-          FROM Reparaciones
+          FROM reparaciones
           GROUP BY id_vehículo
           HAVING COUNT(*) > 3;`,
 
     3: `SELECT v.marca, SUM(ve.cantidad) AS total_vendido
-          FROM Ventas ve
-          JOIN Vehículos v ON ve.id_vehículo = v.id_vehículo
-          WHERE v.tipo = 'moto deportiva'
+          FROM ventas ve
+          JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
+          WHERE v.tipo_vehiculo = 'moto deportiva'
           GROUP BY v.marca
           ORDER BY total_vendido DESC
           LIMIT 1;`,
 
-    4: `SELECT c.nombre, c.email, c.telefono, COUNT(ve.id_venta) AS compras
-          FROM Clientes c
-          JOIN Ventas ve ON ve.id_cliente = c.id_cliente
-          GROUP BY c.id_cliente
+    4: `SELECT c.nombre, c.telefono, COUNT(ve.id_venta) AS compras
+          FROM cliente c
+          JOIN ventas ve ON ve.id_cliente = c.id
+          GROUP BY c.id
           ORDER BY compras DESC
           LIMIT 5;`,
 
     5: `SELECT v.color, COUNT(*) AS cantidad_ventas
-          FROM Ventas ve
-          JOIN Vehículos v ON ve.id_vehículo = v.id_vehículo
-          WHERE v.tipo = 'auto'
+          FROM ventas ve
+          JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
+          WHERE v.tipo_vehiculo = 'auto'
           GROUP BY v.color
           ORDER BY cantidad_ventas DESC
           LIMIT 5;`,
 
     6: `SELECT v.color, COUNT(*) AS cantidad_ventas
-          FROM Ventas ve
-          JOIN Vehículos v ON ve.id_vehículo = v.id_vehículo
-          WHERE v.tipo = 'moto clásica'
+          FROM ventas ve
+          JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
+          WHERE v.tipo_vehiculo = 'moto clásica'
           GROUP BY v.color
           ORDER BY cantidad_ventas DESC
           LIMIT 5;`,
 
-    7: `SELECT SUM(p.cantidad) AS total_neumaticos
-          FROM Ventas ve
-          JOIN Neumaticos p ON ve.id_producto = p.id_producto
-          WHERE p.marca = 'Michelín' AND ve.fecha_venta > DATE_SUB(CURDATE(), INTERVAL 6 MONTH);`,
+    7: `SELECT SUM(ve.cantidad) AS total_vendido
+    FROM ventas ve
+    JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
+    WHERE ve.fecha_venta > CURRENT_DATE - INTERVAL '6 months'
+    GROUP BY v.marca, v.modelo
+    ORDER BY total_vendido DESC
+    LIMIT 1;`,
 
     8: `SELECT forma_pago, COUNT(*) AS total
           FROM Ventas
@@ -75,18 +79,22 @@ app.post('/consulta', async (req, res) => {
           ORDER BY total DESC
           LIMIT 1;`,
 
-    9: `SELECT SUM(p.cantidad) AS total_neumaticos
-          FROM Ventas ve
-          JOIN aceite p ON ve.id_producto = p.id_producto
-          WHERE p.marca = 'sell' AND ve.fecha_venta > DATE_SUB(CURDATE(), INTERVAL 6 MONTH);`,
+    9: `SELECT v.marca, v.modelo, SUM(ve.cantidad) AS total_vendido
+    FROM ventas ve
+    JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
+    WHERE ve.fecha_venta > CURRENT_DATE - INTERVAL '6 MONTHS'
+    GROUP BY v.marca, v.modelo
+    ORDER BY total_vendido DESC
+    LIMIT 1;`,
 
     10: `SELECT s.nombre AS sucursal, COUNT(ve.id_venta) AS cantidad_ventas
            FROM Ventas ve
-           JOIN Sucursales s ON ve.id_sucursal = s.id_sucursal
-           GROUP BY ve.id_sucursal
+           JOIN sucursal s ON ve.sucursal = s.id
+           GROUP BY ve.sucursal, s.nombre
            ORDER BY cantidad_ventas DESC
            LIMIT 1;`
   };
+
 
   // Si la consulta existe en el array, ejecutarla
   const sqlQuery = sqlQueries[queryId];
@@ -98,15 +106,21 @@ app.post('/consulta', async (req, res) => {
   try {
     // Ejecutar la consulta en Neon
     const result = await sql(sqlQuery);
+    
+    // Depuración: Imprimir todo el resultado para ver qué se está recibiendo
+    console.log("Resultado completo de la consulta:", result);
 
-    // Si hay resultados, enviarlos al frontend
     if (result && result.rows) {
+      // Si existen filas, mostrar los datos
+      console.log("Filas obtenidas:", result.rows);
       const headers = Object.keys(result.rows[0]);  // Obtener los encabezados de las columnas
       const rows = result.rows.map(row => Object.values(row));  // Obtener los valores de las filas
 
       res.json({ headers, rows });
     } else {
-      res.json({ headers: [], rows: [] });  // Si no hay resultados
+      // Si no hay resultados, enviar vacío
+      console.log("No se encontraron resultados");
+      res.json({ headers: [], rows: [] });
     }
   } catch (err) {
     console.error('Error en la consulta:', err);

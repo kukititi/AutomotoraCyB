@@ -49,13 +49,11 @@
         }
 
         function displayResults(data) {
-            var table = document.getElementById("resultTable");
-            table.innerHTML = "<thead><tr>" + data.headers.map(header => `<th>${header}</th>`).join('') + "</tr></thead>";
-            var rows = data.rows.map(row => {
-                return "<tr>" + row.map(cell => `<td>${cell}</td>`).join('') + "</tr>";
-            }).join('');
-            table.innerHTML += "<tbody>" + rows + "</tbody>";
-        }
+    const table = document.getElementById("resultTable");
+    const headers = data.headers.map(header => `<th>${header}</th>`).join('');
+    const rows = data.rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('');
+    table.innerHTML = `<thead><tr>${headers}</tr></thead><tbody>${rows}</tbody>`;
+}
     </script>
 </body>
 </html>
