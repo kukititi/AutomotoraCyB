@@ -46,77 +46,73 @@ DELETE FROM aceite *;
 
 DELETE FROM empleado *;
 
-SELECT * FROM aceite;
-SELECT * FROM vehiculo;
-SELECT * FROM sucursal WHERE ciudad = 'Santiago';
-SELECT * FROM aseguradora;
-
-SELECT v.marca, v.modelo, SUM(ve.cantidad) AS total_vendido 
-FROM Ventas ve
-JOIN Vehículos v ON ve.id_vehículo = v.id_vehículo
-WHERE ve.fecha_venta > DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-GROUP BY ve.id_vehículo
-ORDER BY total_vendido DESC
-LIMIT 1;
+ SELECT v.marca, v.modelo, SUM(ve.cantidad) AS total_vendido
+    FROM ventas ve
+    JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
+    WHERE ve.fecha_venta > CURRENT_DATE - INTERVAL '6 months'
+    GROUP BY v.marca, v.modelo
+    ORDER BY total_vendido DESC
+    LIMIT 1;
 
 SELECT id_vehículo, COUNT(*) AS reparaciones
-FROM Reparaciones
-GROUP BY id_vehículo
-HAVING COUNT(*) > 3;
+          FROM reparaciones
+          GROUP BY id_vehículo
+          HAVING COUNT(*) > 3;
 
 SELECT v.marca, SUM(ve.cantidad) AS total_vendido
-FROM Ventas ve
-JOIN Vehículos v ON ve.id_vehículo = v.id_vehículo
-WHERE v.tipo = 'moto deportiva'
-GROUP BY v.marca
-ORDER BY total_vendido DESC
-LIMIT 1;
+          FROM ventas ve
+          JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
+          WHERE v.tipo_vehiculo = 'moto'
+          GROUP BY v.marca
+          ORDER BY total_vendido DESC
+          LIMIT 1;
 
-SELECT c.nombre, c.email, c.telefono, COUNT(ve.id_venta) AS compras
-FROM Clientes c
-JOIN Ventas ve ON ve.id_cliente = c.id_cliente
-GROUP BY c.id_cliente
-ORDER BY compras DESC
-LIMIT 5;
-
-SELECT v.color, COUNT(*) AS cantidad_ventas
-FROM Ventas ve
-JOIN Vehículos v ON ve.id_vehículo = v.id_vehículo
-WHERE v.tipo = 'auto'
-GROUP BY v.color
-ORDER BY cantidad_ventas DESC
-LIMIT 5;
+SELECT c.nombre, c.telefono, COUNT(ve.id_venta) AS compras
+          FROM cliente c
+          JOIN ventas ve ON ve.id_cliente = c.id
+          GROUP BY c.id
+          ORDER BY compras DESC
+          LIMIT 5;
 
 SELECT v.color, COUNT(*) AS cantidad_ventas
-FROM Ventas ve
-JOIN Vehículos v ON ve.id_vehículo = v.id_vehículo
-WHERE v.tipo = 'moto clásica'
-GROUP BY v.color
-ORDER BY cantidad_ventas DESC
-LIMIT 5;
+          FROM ventas ve
+          JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
+          WHERE v.tipo_vehiculo = 'auto'
+          GROUP BY v.color
+          ORDER BY cantidad_ventas DESC
+          LIMIT 5;
 
-SELECT SUM(p.cantidad) AS total_neumaticos
-FROM Ventas ve
-JOIN Neumaticos p ON ve.id_producto = p.id_producto
-WHERE p.marca = 'Michelín' AND ve.fecha_venta > DATE_SUB(CURDATE(), INTERVAL 6 MONTH);
+SELECT v.color, COUNT(*) AS cantidad_ventas
+          FROM ventas ve
+          JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
+          WHERE v.tipo_vehiculo = 'moto'
+          GROUP BY v.color
+          ORDER BY cantidad_ventas DESC
+          LIMIT 5;
+
+SELECT SUM(ve.cantidad) AS total_vendido
+    FROM ventas ve
+    JOIN neumatico v ON ve.id_producto = v.id_producto
+    WHERE ve.fecha_venta > CURRENT_DATE - INTERVAL '6 months'
+    ORDER BY total_vendido DESC
+    LIMIT 1;
 
 SELECT forma_pago, COUNT(*) AS total
-FROM Ventas
-GROUP BY forma_pago
-ORDER BY total DESC
-LIMIT 1;
+          FROM Ventas
+          GROUP BY forma_pago
+          ORDER BY total DESC
+          LIMIT 1;
 
-SELECT SUM(p.cantidad) AS total_neumaticos
-FROM Ventas ve
-JOIN aceite p ON ve.id_producto = p.id_producto
-WHERE p.marca = 'sell' AND ve.fecha_venta > DATE_SUB(CURDATE(), INTERVAL 6 MONTH);
+SELECT SUM(ve.cantidad) AS total_vendido
+    FROM ventas ve
+    JOIN aceite v ON ve.id_producto = v.id
+    WHERE ve.fecha_venta > CURRENT_DATE - INTERVAL '6 MONTHS'
+    ORDER BY total_vendido DESC
+    LIMIT 1;
 
 SELECT s.nombre AS sucursal, COUNT(ve.id_venta) AS cantidad_ventas
-FROM Ventas ve
-JOIN Sucursales s ON ve.id_sucursal = s.id_sucursal
-GROUP BY ve.id_sucursal
-ORDER BY cantidad_ventas DESC
-LIMIT 1;
-
-
-
+           FROM Ventas ve
+           JOIN sucursal s ON ve.sucursal = s.id
+           GROUP BY ve.sucursal, s.nombre
+           ORDER BY cantidad_ventas DESC
+           LIMIT 1;

@@ -14,13 +14,13 @@
     <select id="querySelect">
         <option value="1">Consulta 1: Vehículo más vendido</option>
         <option value="2">Consulta 2: Vehículos con más de 3 reparaciones</option>
-        <option value="3">Consulta 3: Marca más vendida de motos deportivas</option>
+        <option value="3">Consulta 3: Marca más vendida de motos</option>
         <option value="4">Consulta 4: Clientes con más compras</option>
         <option value="5">Consulta 5: Colores de autos más vendidos</option>
-        <option value="6">Consulta 6: Colores de motos clásicas más vendidos</option>
+        <option value="6">Consulta 6: Colores de motos más vendidos</option>
         <option value="7">Consulta 7: Total de neumáticos vendidos de Michelín</option>
         <option value="8">Consulta 8: Forma de pago más utilizada</option>
-        <option value="9">Consulta 9: Total de neumáticos vendidos de aceite 'sell'</option>
+        <option value="9">Consulta 9: Total de aceite vendido marca 'sell'</option>
         <option value="10">Consulta 10: Sucursal con más ventas</option>
     </select>
     <button onclick="executeQuery()">Ejecutar Consulta</button>
@@ -37,7 +37,7 @@
         function executeQuery() {
             var queryId = document.getElementById("querySelect").value;
             var xhr = new XMLHttpRequest();
-            xhr.open("POST", "http://localhost:3000/consulta", true);  // Asegúrate de que esta URL apunte a tu backend
+            xhr.open("POST", "http://localhost:3000/consulta", true); 
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.onreadystatechange = function () {
                 if (xhr.readyState == 4 && xhr.status == 200) {

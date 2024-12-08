@@ -7,16 +7,12 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 const app = express();
 const port = 3000;
-app.use(cors());  // Esto permitirá solicitudes desde cualquier origen
+app.use(cors());  
 
-
-// Configura tu conexión a la base de datos de Neon
 const sql = neon('postgresql://neondb_owner:dmteZW7Fq3Ph@ep-steep-bar-a5mvqh21.us-east-2.aws.neon.tech/neondb?sslmode=require');
 
-// Middleware para recibir datos JSON
 app.use(express.json());
 
-// Ruta para manejar las consultas SQL
 app.post('/consulta', async (req, res) => {
   const queryId = req.body.queryId;
 
@@ -37,7 +33,7 @@ app.post('/consulta', async (req, res) => {
     3: `SELECT v.marca, SUM(ve.cantidad) AS total_vendido
           FROM ventas ve
           JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
-          WHERE v.tipo_vehiculo = 'moto deportiva'
+          WHERE v.tipo_vehiculo = 'moto'
           GROUP BY v.marca
           ORDER BY total_vendido DESC
           LIMIT 1;`,
@@ -60,16 +56,15 @@ app.post('/consulta', async (req, res) => {
     6: `SELECT v.color, COUNT(*) AS cantidad_ventas
           FROM ventas ve
           JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
-          WHERE v.tipo_vehiculo = 'moto clásica'
+          WHERE v.tipo_vehiculo = 'moto'
           GROUP BY v.color
           ORDER BY cantidad_ventas DESC
           LIMIT 5;`,
 
     7: `SELECT SUM(ve.cantidad) AS total_vendido
     FROM ventas ve
-    JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
+    JOIN neumatico v ON ve.id_producto = v.id_producto
     WHERE ve.fecha_venta > CURRENT_DATE - INTERVAL '6 months'
-    GROUP BY v.marca, v.modelo
     ORDER BY total_vendido DESC
     LIMIT 1;`,
 
@@ -79,11 +74,10 @@ app.post('/consulta', async (req, res) => {
           ORDER BY total DESC
           LIMIT 1;`,
 
-    9: `SELECT v.marca, v.modelo, SUM(ve.cantidad) AS total_vendido
+    9: `SELECT SUM(ve.cantidad) AS total_vendido
     FROM ventas ve
-    JOIN vehiculo v ON ve.id_vehículo = v.id_vehiculo
+    JOIN aceite v ON ve.id_producto = v.id
     WHERE ve.fecha_venta > CURRENT_DATE - INTERVAL '6 MONTHS'
-    GROUP BY v.marca, v.modelo
     ORDER BY total_vendido DESC
     LIMIT 1;`,
 
@@ -96,7 +90,6 @@ app.post('/consulta', async (req, res) => {
   };
 
 
-  // Si la consulta existe en el array, ejecutarla
   const sqlQuery = sqlQueries[queryId];
 
   if (!sqlQuery) {
@@ -104,21 +97,17 @@ app.post('/consulta', async (req, res) => {
   }
 
   try {
-    // Ejecutar la consulta en Neon
     const result = await sql(sqlQuery);
     
-    // Depuración: Imprimir todo el resultado para ver qué se está recibiendo
     console.log("Resultado completo de la consulta:", result);
 
     if (result && result.rows) {
-      // Si existen filas, mostrar los datos
       console.log("Filas obtenidas:", result.rows);
-      const headers = Object.keys(result.rows[0]);  // Obtener los encabezados de las columnas
-      const rows = result.rows.map(row => Object.values(row));  // Obtener los valores de las filas
+      const headers = Object.keys(result.rows[0]);
+      const rows = result.rows.map(row => Object.values(row));
 
       res.json({ headers, rows });
     } else {
-      // Si no hay resultados, enviar vacío
       console.log("No se encontraron resultados");
       res.json({ headers: [], rows: [] });
     }
@@ -132,7 +121,6 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Iniciar el servidor
 app.listen(port, () => {
   console.log(`Servidor corriendo en http://localhost:${port}`);
 });
