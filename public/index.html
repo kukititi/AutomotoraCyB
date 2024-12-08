@@ -1,110 +1,61 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Consulta Dinámica</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta SQL</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-      }
-      th,
-      td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: left;
-      }
-      th {
-        background-color: #f2f2f2;
-      }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
     </style>
-  </head>
-  <body>
-    <h1>Consultar Informacion</h1>
-    <form id="consulta-form">
-      <label for="tabla">Selecciona una consulta:</label>
-      <select id="tabla" name="tabla" required>
-        <option value="" disabled selected>--Selecciona una consulta--</option>
-        <option value="SELECT * FROM aceite">aceite</option>
-        <option value="SELECT * FROM vehiculo">vehiculos</option>
-        <option value="SELECT * FROM sucursal">sucursales</option>
-        <option value="SELECT * FROM aseguradora">seguros</option>
-        <option value="SELECT * FROM empleado">empleado</option>
-        <option value="SELECT * FROM motor">motor</option>
-      </select>
-      <button type="submit">Consultar</button>
-    </form>
+</head>
+<body>
+    <h1>Selecciona una Consulta SQL</h1>
+    <select id="querySelect">
+        <option value="1">Consulta 1: Vehículo más vendido</option>
+        <option value="2">Consulta 2: Vehículos con más de 3 reparaciones</option>
+        <option value="3">Consulta 3: Marca más vendida de motos deportivas</option>
+        <option value="4">Consulta 4: Clientes con más compras</option>
+        <option value="5">Consulta 5: Colores de autos más vendidos</option>
+        <option value="6">Consulta 6: Colores de motos clásicas más vendidos</option>
+        <option value="7">Consulta 7: Total de neumáticos vendidos de Michelín</option>
+        <option value="8">Consulta 8: Forma de pago más utilizada</option>
+        <option value="9">Consulta 9: Total de neumáticos vendidos de aceite 'sell'</option>
+        <option value="10">Consulta 10: Sucursal con más ventas</option>
+    </select>
+    <button onclick="executeQuery()">Ejecutar Consulta</button>
 
-    <div id="resultados"></div>
+    <h2>Resultados:</h2>
+    <table id="resultTable">
+        <thead>
+            <tr></tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
     <script>
-      const form = document.getElementById('consulta-form');
-      const resultadosDiv = document.getElementById('resultados');
-
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const tabla = document.getElementById('tabla').value;
-
-        try {
-          const response = await fetch('http://localhost:3000/consulta', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tabla }),
-          });
-
-          if (!response.ok) {
-            throw new Error('Error en la consulta.');
-          }
-
-          const data = await response.json();
-
-          renderResults(data);
-        } catch (error) {
-          resultadosDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
-        }
-      });
-
-      function renderResults(data) {
-        if (!data.length) {
-          resultadosDiv.innerHTML = '<p>No se encontraron datos.</p>';
-          return;
+        function executeQuery() {
+            var queryId = document.getElementById("querySelect").value;
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "consulta.php", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    displayResults(response);
+                }
+            };
+            xhr.send("queryId=" + queryId);
         }
 
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        const tbody = document.createElement('tbody');
-
-        const headers = Object.keys(data[0]);
-        const trHead = document.createElement('tr');
-        headers.forEach((header) => {
-          const th = document.createElement('th');
-          th.textContent = header;
-          trHead.appendChild(th);
-        });
-        thead.appendChild(trHead);
-
-        data.forEach((row) => {
-          const tr = document.createElement('tr');
-          headers.forEach((header) => {
-            const td = document.createElement('td');
-            td.textContent = row[header];
-            tr.appendChild(td);
-          });
-          tbody.appendChild(tr);
-        });
-
-        table.appendChild(thead);
-        table.appendChild(tbody);
-        resultadosDiv.innerHTML = '';
-        resultadosDiv.appendChild(table);
-      }
+        function displayResults(data) {
+            var table = document.getElementById("resultTable");
+            table.innerHTML = "<thead><tr>" + data.headers.map(header => `<th>${header}</th>`).join('') + "</tr></thead>";
+            var rows = data.rows.map(row => {
+                return "<tr>" + row.map(cell => `<td>${cell}</td>`).join('') + "</tr>";
+            }).join('');
+            table.innerHTML += "<tbody>" + rows + "</tbody>";
+        }
     </script>
-  </body>
+</body>
 </html>

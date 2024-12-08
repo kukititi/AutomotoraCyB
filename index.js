@@ -1,38 +1,55 @@
 import express from 'express';
-import bodyParser from 'body-parser';
-import { neon } from '@neondatabase/serverless';
+import fs from 'fs';
+import mysql from 'mysql2';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const port = 3000;
 
-// Configurar la conexión a Neon
-const sql = neon(
-  'postgresql://neondb_owner:dmteZW7Fq3Ph@ep-steep-bar-a5mvqh21.us-east-2.aws.neon.tech/neondb?sslmode=require'
-);
+const app = express();
 
-// Middleware para parsear JSON
-app.use(bodyParser.json());
+// Configuración de la base de datos
+const db = mysql.createConnection({
+  host: 'localhost',
+  user: 'root', // tu usuario
+  password: '', // tu contraseña
+  database: 'tu_base_de_datos', // nombre de tu base de datos
+});
 
-// Servir archivos estáticos desde la carpeta "public"
-const __dirname = path.resolve(); // Obtener la ruta absoluta del proyecto
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Endpoint para manejar consultas a la base de datos
-app.post('/consulta', async (req, res) => {
-  const { tabla } = req.body;
-
-  if (!tabla) {
-    return res.status(400).json({ error: 'Por favor, especifica una tabla.' });
+// Conectar a la base de datos
+db.connect((err) => {
+  if (err) {
+    console.error('Error de conexión: ' + err.stack);
+    return;
   }
+  console.log('Conectado a la base de datos');
+});
 
-  try {
-    const resultados = await sql(`${tabla}`);
-    res.json(resultados);
-  } catch (error) {
-    console.error('Error al consultar la base de datos:', error);
-    res.status(500).json({ error: 'Error al realizar la consulta.' });
-  }
+// Middleware para recibir datos JSON
+app.use(express.json());
+
+// Ruta para manejar consultas
+app.post('/consulta', (req, res) => {
+  const { consulta } = req.body; // Recibe la consulta desde el frontend
+
+  // Leer el archivo SQL con las consultas
+  const filePath = path.join(__dirname, 'consultas.sql');
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) {
+      return res.status(500).send('Error al leer el archivo de consultas.');
+    }
+
+    // Ejecutar la consulta seleccionada
+    db.query(data, (err, results) => {
+      if (err) {
+        return res.status(500).send('Error al ejecutar la consulta.');
+      }
+      res.json(results); // Enviar los resultados al frontend
+    });
+  });
 });
 
 // Redirigir todas las rutas no especificadas a index.html (ideal para SPA o rutas desconocidas)
