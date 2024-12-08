@@ -1,17 +1,20 @@
 <?php
 $servername = "localhost";
-$username = "usuario";
-$password = "contraseña";
-$dbname = "base_de_datos";
+$username = "usuario";  // Cambia esto por tu usuario de base de datos
+$password = "contraseña";  // Cambia esto por tu contraseña de base de datos
+$dbname = "base_de_datos";  // Cambia esto por el nombre de tu base de datos
 
+// Conexión a la base de datos
 $conn = new mysqli($servername, $username, $password, $dbname);
 
+// Verificar conexión
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
 $queryId = $_POST['queryId'];
 
+// Definir las consultas SQL basadas en el `queryId`
 $sqlQueries = [
     1 => "SELECT v.marca, v.modelo, SUM(ve.cantidad) AS total_vendido 
           FROM Ventas ve
@@ -72,28 +75,32 @@ $sqlQueries = [
            LIMIT 1;"
 ];
 
-$sql = $sqlQueries[$queryId];
+$sql = $sqlQueries[$queryId];  // Selecciona la consulta según el `queryId`
 
+// Ejecutar la consulta SQL
 $result = $conn->query($sql);
 
+// Verificar si hay resultados
 if ($result->num_rows > 0) {
     $headers = [];
     $rows = [];
-    
-    // Get headers
+
+    // Obtener los encabezados de las columnas
     while ($field = $result->fetch_field()) {
         $headers[] = $field->name;
     }
-    
-    // Get rows
+
+    // Obtener las filas de resultados
     while ($row = $result->fetch_assoc()) {
-        $rows[] = array_values($row);
+        $rows[] = array_values($row);  // Convertir los valores de la fila en un arreglo simple
     }
-    
+
+    // Retornar los resultados en formato JSON
     echo json_encode(['headers' => $headers, 'rows' => $rows]);
 } else {
-    echo json_encode(['headers' => [], 'rows' => []]);
+    echo json_encode(['headers' => [], 'rows' => []]);  // Si no hay resultados
 }
 
+// Cerrar la conexión
 $conn->close();
 ?>
