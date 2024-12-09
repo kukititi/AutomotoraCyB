@@ -10,6 +10,65 @@
     </style>
 </head>
 <body>
+
+    <h1>Gestión de Vehiculos</h1>
+
+    <!-- Formulario de Gestión de Productos -->
+    <form id="productForm">
+        <label>Patente:</label><br>
+
+        <input type="text" name="patente" required><br><br>
+
+        <label>ID del Vehículo:</label><br>
+
+        <input type="number" name="id_vehiculo" required><br><br>
+
+        <label>Marca:</label><br>
+        <input type="text" name="marca" required><br><br>
+
+        <label>Modelo:</label><br>
+        <input type="text" name="modelo" required><br><br>
+
+        <label>Color:</label><br>
+        <input type="text" name="color" required><br><br>
+
+        <label>Tipo de Vehículo:</label><br>
+        <input type="text" name="tipo_vehiculo" required><br><br>
+
+        <button type="button" onclick="submitForm('/agregar')">Agregar</button>
+        <button type="button" onclick="submitForm('/modificar')">Modificar</button>
+        <button type="button" onclick="submitForm('/eliminar')">Eliminar</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        function submitForm(action) {
+            const form = document.getElementById("productForm");
+            const formData = new FormData(form);
+            const data = {};
+
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+
+            fetch(action, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.text())
+            .then(result => {
+                document.getElementById("result").innerHTML = `<p>${result}</p>`;
+            })
+            .catch(error => {
+                console.error(error);
+                document.getElementById("result").innerHTML = "<p>Error en la operación.</p>";
+            });
+        }
+    </script>
     <h1>Selecciona una Consulta SQL</h1>
     <select id="querySelect">
         <option value="1">Consulta 1: Vehículo más vendido</option>
@@ -20,18 +79,10 @@
         <option value="6">Consulta 6: Colores de motos más vendidos</option>
         <option value="7">Consulta 7: Total de neumáticos vendidos de Michelín</option>
         <option value="8">Consulta 8: Forma de pago más utilizada</option>
-        <option value="9">Consulta 9: Total de aceite vendido marca 'sell'</option>
+        <option value="9">Consulta 9: Total de aceite vendido marca 'Shell'</option>
         <option value="10">Consulta 10: Sucursal con más ventas</option>
     </select>
     <button onclick="executeQuery()">Ejecutar Consulta</button>
-
-    <h2>Resultados:</h2>
-    <table id="resultTable">
-        <thead>
-            <tr></tr>
-        </thead>
-        <tbody></tbody>
-    </table>
 
     <script>
         function executeQuery() {

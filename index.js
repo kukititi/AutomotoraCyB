@@ -2,16 +2,64 @@ import express from 'express';
 import { neon } from '@neondatabase/serverless';
 import path from 'path';
 import cors from 'cors';
+import bodyParser from 'body-parser';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 const app = express();
 const port = 3000;
 app.use(cors());  
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const sql = neon('postgresql://neondb_owner:dmteZW7Fq3Ph@ep-steep-bar-a5mvqh21.us-east-2.aws.neon.tech/neondb?sslmode=require');
 
 app.use(express.json());
+
+app.post('/agregar', async (req, res) => {
+  const { patente, id_vehiculo, marca, modelo, color, tipo_vehiculo } = req.body;
+
+  try {
+    await sql(`INSERT INTO vehiculo (patente, id_vehiculo, marca, modelo, color, tipo_vehiculo)
+               VALUES ($1, $2, $3, $4, $5, $6)`, 
+               [patente, id_vehiculo, marca, modelo, color, tipo_vehiculo]);
+
+    res.send('Producto agregado correctamente.');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al agregar el producto.');
+  }
+});
+
+// Ruta para modificar un producto
+app.post('/modificar', async (req, res) => {
+  const { patente, id_vehiculo, marca, modelo, color, tipo_vehiculo } = req.body;
+
+  try {
+    await sql(`UPDATE vehiculo 
+    SET patente=$1, marca=$3, modelo=$4, color=$5, tipo_vehiculo=$6 
+    WHERE id_vehiculo=$2
+    `, 
+               [patente, id_vehiculo, marca, modelo, color, tipo_vehiculo]);
+
+    res.send('Producto modificado correctamente.');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al modificar el producto.');
+  }
+});
+
+// Ruta para eliminar un producto
+app.post('/eliminar', async (req, res) => {
+  const { id_vehiculo } = req.body;
+
+  try {
+    await sql(`DELETE FROM vehiculo WHERE id_vehiculo=$1`, [id_vehiculo]);
+    res.send('Producto eliminado correctamente.');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al eliminar el producto.');
+  }
+});
 
 app.post('/consulta', async (req, res) => {
   const queryId = req.body.queryId;
@@ -61,10 +109,11 @@ app.post('/consulta', async (req, res) => {
           ORDER BY cantidad_ventas DESC
           LIMIT 5;`,
 
-    7: `SELECT SUM(ve.cantidad) AS total_vendido
+    7: `SELECT v.marca, SUM(ve.cantidad) AS total_vendido
     FROM ventas ve
     JOIN neumatico v ON ve.id_producto = v.id_producto
-    WHERE ve.fecha_venta > CURRENT_DATE - INTERVAL '6 months'
+    WHERE v.marca = 'Michelin'
+    GROUP BY v.marca
     ORDER BY total_vendido DESC
     LIMIT 1;`,
 
@@ -74,10 +123,11 @@ app.post('/consulta', async (req, res) => {
           ORDER BY total DESC
           LIMIT 1;`,
 
-    9: `SELECT SUM(ve.cantidad) AS total_vendido
+    9: `SELECT v.marca, SUM(ve.cantidad) AS total_vendido
     FROM ventas ve
     JOIN aceite v ON ve.id_producto = v.id
-    WHERE ve.fecha_venta > CURRENT_DATE - INTERVAL '6 MONTHS'
+    WHERE v.marca = 'Shell'
+    GROUP BY v.marca
     ORDER BY total_vendido DESC
     LIMIT 1;`,
 
